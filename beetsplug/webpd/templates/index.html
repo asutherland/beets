@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>beets webpd</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='beets.css') }}" type="text/css">
+
+    <script src="{{ url_for('static', filename='lib/zepto.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/underscore.js') }}">
+    </script>
+    <script src="{{ url_for('static', filename='lib/backbone.js') }}"></script>
+    <script src="{{ url_for('static', filename='bower_components/platform/platform.js') }}"></script>
+    <link rel="import" href="static/bower_components/polymer-list/polymer-virtual-list.html">
+
+    <script src="{{ url_for('static', filename='js/beets_model.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/beets_ui.js') }}"></script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>beets</h1>
+      <div id="player">
+        <audio></audio>
+
+        <button class="disabled">&#9654;</button>
+        <button class="play">&#9654;</button>
+        <button class="pause" style="letter-spacing: 1px;">&#10073;&#10073;</button>
+
+        <span class="times">
+          <span class="currentTime">
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <artist-list id="artist-list"></artist-list>
+
+    <polymer-element name="artist-list">
+      <template>
+        <style>
+          polymer-virtual-list {
+            height: 100%;
+          }
+
+          polymer-virtual-list ^ .artist {
+            box-sizing: border-box;
+            height: 80px;
+            padding: 4px;
+            padding-left: 77px;
+            line-height: 167%;
+            cursor: default;
+            background-color: white;
+            position: relative;
+            color: black;
+            background-repeat: no-repeat;
+            background-position: 10px 10px;
+            background-size: 60px;
+            border-bottom: 1px solid #ddd;
+          }
+          
+          polymer-virtual-list ^ .artist-name {
+            font-weight: bold;
+          }
+          
+          polymer-virtual-list ^ .artist-year-vis {
+          }
+          
+          polymer-virtual-list ^ .divider {
+            background: grey;
+            color: white;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 10px;
+            text-transform: uppercase;
+          }
+        </style>
+        <polymer-virtual-list id="list" on-polymer-list-generate-page="{{generateListPage}}" count="{{count}}">
+        </polymer-virtual-list>
+
+        <template id="listItem">
+          <div class="item">
+            <div class="divider"></div>
+            <div class="artist">
+              <div class="artist-name"></div>
+              <div class="artist-year-vis"></div>
+            </div>
+          </div>
+        </template>
+
+      </template>
+      <script>
+      (function() {
+        Polymer('artist-list', {
+          count: 0,
+          ready: function() {
+            window.polymerArtistList = this;
+            this.data = allArtists;
+            this.$.list.addEventListener('polymer-list-generate-page',
+                                         function(e, detail) {
+              // for unclear reasons, the automated bind is not working or is
+              // getting cancelled/reaped automatically...
+              console.log('manual event listener seeing event');
+              this.generateListPage(e, e.impl.detail);
+            }.bind(this));
+          },
+          tapAction: function(e) {
+            console.log('tap', e);
+          },
+          generateListPage: function(e, detail) {
+            console.log('requested:', detail.start, detail.end);
+            var dom = document.createDocumentFragment();
+            for (var i = detail.start, l=detail.end, d, r;
+                 (i<l) && (d=this.data.at(i)); i++) {
+              r = this.$.listItem.ref.content.cloneNode(true);
+              var item = r.querySelector('.item');
+              var divider = r.querySelector('.divider');
+              divider.style.display = d.divider ? null : 'none';
+              divider.textContent = d.divider;
+
+              var artistNode = r.querySelector('.artist');
+              var nameNode =  artistNode.querySelector('artist-name');
+              nameNode.textContent = artist.get('name');
+
+              dom.appendChild(r);
+            }
+            detail.page.appendChild(dom);
+          },
+          refresh: function() {
+            console.log('touching count');
+            this.count = this.data.length;
+            console.log('touching $.list count');
+            this.$.list.count = this.count;
+            //this.$.list.refresh();
+            //console.log('triggering reset');
+            //this.$.list.reset();
+          }
+        });
+      })();  
+      </script>
+    </polymer-element>
+  </body>
+</html>

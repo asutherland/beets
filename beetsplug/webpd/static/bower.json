@@ -1,0 +1,15 @@
+{
+  "name": "webpd",
+  "version": "0.0.1",
+  "description": "web player daemon ui",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "~0.2.1"
+  }
+}

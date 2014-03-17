@@ -93,6 +93,7 @@ setup(name='beets',
           'echonest_tempo': ['pyechonest'],
           'lastgenre': ['pylast'],
           'web': ['flask'],
+          'webpd': ['flask','blinker'],
       },
       # Non-Python/non-PyPI plugin dependencies:
       # replaygain: mp3gain || aacgain
