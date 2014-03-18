@@ -2,20 +2,23 @@
 
 
 var Item = Backbone.Model.extend({
-    urlRoot: '/item'
+  urlRoot: '/item'
 });
 var Items = Backbone.Collection.extend({
-    model: Item
+  model: Item,
+  comparator: 'track',
 });
 
 var Album = Backbone.Model.extend({
-    urlRoot: '/album'
+  urlRoot: '/album'
 });
 var Albums = Backbone.Collection.extend({
-  model: Album
+  model: Album,
+  comparator: 'album',
 });
 var AlbumsWithComputedArtists = Backbone.Collection.extend({
   model: Album,
+  comparator: 'album',
   initialize: function() {
     this.artists = new Artists();
     this.artistByName = Object.create(null);
@@ -53,7 +56,8 @@ var Artist = Backbone.Model.extend({
   },
 });
 var Artists = Backbone.Collection.extend({
-  model: Artist
+  model: Artist,
+  comparator: 'name',
 });
 
 var allAlbums = new AlbumsWithComputedArtists();
@@ -104,6 +108,9 @@ function populateAlbums(highAlbumId) {
 
   function done() {
     console.log('got all albums through id', highAlbumId);
+    if (window.polymerArtistList) {
+      window.polymerArtistList.refresh();
+    }
   }
   getMore();
 }

@@ -77,15 +77,13 @@
         <polymer-virtual-list id="list" on-polymer-list-generate-page="{{generateListPage}}" count="{{count}}">
         </polymer-virtual-list>
 
-        <template id="listItem">
-          <div class="item">
+          <div id="listItem" class="item">
             <div class="divider"></div>
             <div class="artist">
               <div class="artist-name"></div>
               <div class="artist-year-vis"></div>
             </div>
           </div>
-        </template>
 
       </template>
       <script>
@@ -111,15 +109,22 @@
             var dom = document.createDocumentFragment();
             for (var i = detail.start, l=detail.end, d, r;
                  (i<l) && (d=this.data.at(i)); i++) {
-              r = this.$.listItem.ref.content.cloneNode(true);
-              var item = r.querySelector('.item');
+              r = this.$.listItem.cloneNode(true);
+              var item = r; // .querySelector('.item');
               var divider = r.querySelector('.divider');
               divider.style.display = d.divider ? null : 'none';
               divider.textContent = d.divider;
 
+              var artist = d;
               var artistNode = r.querySelector('.artist');
-              var nameNode =  artistNode.querySelector('artist-name');
+              var nameNode = artistNode.querySelector('.artist-name');
               nameNode.textContent = artist.get('name');
+
+              var yearsNode = artistNode.querySelector('.artist-year-vis');
+              var years = artist.albums.pluck('year');
+              years.sort();
+              yearsNode.textContent = years.join(', ');
+              
 
               dom.appendChild(r);
             }
