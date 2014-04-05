@@ -1,0 +1,93 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<polymer-element name="albums-vis" attributes="albums">
+<template>
+  <style>
+    album-vis ^ #render {
+      width: 100%;
+    }
+  </style>
+  <svg id="render"></svg>
+</template>
+<script>
+/**
+ * Small-multiples style parallel visualization of a collection of albums in
+ * a horizontally oriented style for use in a scrolling artist list.
+ *
+ * ## Scales ##
+ * 
+ * Because we are expecting to have a bunch of siblings that are also created
+ * independently, all coordinate spaces are based on reasonable hard-coded
+ * ranges with gutters left over for outliers.  While specific ranges may vary
+ * based on the music database, a few ranges likely work.  For example, there's
+ * a good chance you only care about music before 1950 if you are big into
+ * classical music and are using the year of composition.  Likewise, we do not
+ * particularly need extremely low or high BPM's to be displayed.
+ *
+ * ## Display Strategy ##
+ *
+ * Heatmaps using sparse bins.
+ *
+ */
+Polymer('albums-vis', {
+  albums: null,
+  
+  ready: function() {
+  },
+  albumsChanged: function() {
+    this.render();
+  },
+  render: function() {
+    console.log('albums', this.albums);
+    if (!this.albums) {
+      console.log('bailing because of no albums!');
+    }
+
+    var svg = d3.select(this.$.render);
+
+    var padding = 0;
+
+    var width = parseInt(svg.style("width")) - padding;
+    var height = parseInt(svg.style("height")) - padding;
+
+    var curYear = new Date().getUTCFullYear();
+    var FIRST_YEAR = 1950;
+    var LAST_YEAR = curYear;
+
+    var numYearBuckets = LAST_YEAR - FIRST_YEAR + 1;
+    var yearWidth = Math.floor(width / numYearBuckets);
+    var xTime = d3.scale.linear()
+      .domain([FIRST_YEAR, LAST_YEAR])
+      .rangeRound([0, yearWidth * numYearBuckets])
+      .clamp(true);
+
+    // backbone / underscore has groupBy, but we're in the d3 idiom here.
+    var yearBins = d3.nest()
+      .key(function(album) { 
+             var year = album.get('year') || FIRST_YEAR;
+             if (year < FIRST_YEAR) year = FIRST_YEAR;
+             if (year > LAST_YEAR) year = LAST_YEAR;
+             return year;
+           })
+      .entries(this.albums.models);
+
+    var color = d3.scale.linear()
+      .domain([0, 6])
+      .range(['white', 'blue']);
+
+    var heatRects = svg.selectAll('.year')
+        .data(yearBins)
+      .enter().append('rect')
+        .attr('class', 'year')
+        .attr('width', yearWidth)
+        .attr('height', height)
+        .attr('x', function(bin) { return xTime(parseInt(bin.key, 10)); })
+        .attr('y', 0)
+        .attr('fill', function(bin) { return color(bin.values.length); })
+        .attr('stroke', function(bin) { return color(bin.values.length); });
+console.log('processed');
+
+  }
+});
+</script>
+</polymer-element>
