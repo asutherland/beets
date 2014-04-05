@@ -3,8 +3,9 @@
 <polymer-element name="albums-vis" attributes="albums">
 <template>
   <style>
-    album-vis ^ #render {
+    albums-vis ^ #render {
       width: 100%;
+      height: 100%;
     }
   </style>
   <svg id="render"></svg>
@@ -33,14 +34,14 @@ Polymer('albums-vis', {
   albums: null,
   
   ready: function() {
+    this.render();
   },
   albumsChanged: function() {
     this.render();
   },
   render: function() {
-    console.log('albums', this.albums);
     if (!this.albums) {
-      console.log('bailing because of no albums!');
+      return;
     }
 
     var svg = d3.select(this.$.render);
@@ -51,11 +52,14 @@ Polymer('albums-vis', {
     var height = parseInt(svg.style("height")) - padding;
 
     var curYear = new Date().getUTCFullYear();
-    var FIRST_YEAR = 1950;
+    var FIRST_YEAR = 1979;
     var LAST_YEAR = curYear;
 
     var numYearBuckets = LAST_YEAR - FIRST_YEAR + 1;
     var yearWidth = Math.floor(width / numYearBuckets);
+    // create an x-scale that maps from year to the starting x coordinate of the
+    // year bin.  We need to subtract one bucket's worth of width back off to
+    // make this happen without random stretch gaps.
     var xTime = d3.scale.linear()
       .domain([FIRST_YEAR, LAST_YEAR])
       .rangeRound([0, yearWidth * (numYearBuckets - 1)])
@@ -79,7 +83,6 @@ Polymer('albums-vis', {
       var yearBins = d3.nest()
         .key(normalizeYear)
         .entries(albums);
-      console.log(type, 'count:', yearBins.length);
 
       var color = d3.scale.linear()
         .domain([0, fullColorAtCount])
@@ -90,7 +93,7 @@ Polymer('albums-vis', {
       var heatRects = svg.selectAll('.' + className)
           .data(yearBins)
         .enter().append('rect')
-          .attr('class', 'className')
+          .attr('class', className)
           .attr('width', yearWidth)
           .attr('height', rectHeight)
           .attr('x', function(bin) { return xTime(parseInt(bin.key, 10)); })
@@ -99,7 +102,8 @@ Polymer('albums-vis', {
     }
 
     var albumsByType = this.albums.groupBy('normalbumtype');
-    // album
+    // color-wise, we should probably just be varying the opacity rather than
+    // interpolating the color so that CSS could handle the color.
     renderAlbums('album', albumsByType.album, 0, 'red', 6);
     renderAlbums('single', albumsByType.single, 1, 'green', 6);
     renderAlbums('compilation', albumsByType.compilation, 2, 'blue', 6);

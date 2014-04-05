@@ -6,6 +6,7 @@
     <link rel="stylesheet"
           href="{{ url_for('static', filename='beets.css') }}" type="text/css">
 
+    <script src="{{ url_for('static', filename='lib/promise-0.1.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/zepto.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/underscore.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/backbone.js') }}"></script>
@@ -13,6 +14,7 @@
     <script src="{{ url_for('static', filename='bower_components/platform/platform.js') }}"></script>
     <link rel="import" href="{{ url_for('static', filename='bower_components/polymer-list/polymer-virtual-list.html') }}">
     <link rel="import" href="{{ url_for('static', filename='elements/albums-vis.html') }}">
+    <link rel="import" href="{{ url_for('static', filename='elements/tracks-vis.html') }}">
 
     <script src="{{ url_for('static', filename='js/beets_model.js') }}"></script>
     <script src="{{ url_for('static', filename='js/beets_ui.js') }}"></script>
@@ -73,7 +75,16 @@
             position: absolute;
             left: 20rem;
             top: 0;
-            width: calc(100% - 20rem - 8px);
+            width: calc(65% - 20rem - 8px);
+            height: 39px;
+          }
+
+          polymer-virtual-list ^ .tracks-vis {
+            display: lock;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: calc(35%);
             height: 39px;
           }
           
@@ -93,7 +104,8 @@
             <div class="divider"></div>
             <div class="artist">
               <div class="artist-name"></div>
-              <albums-vis class="albums-vis"></albums-vis>
+              <albums-vis class="albums-vis" height="39"></albums-vis>
+              <tracks-vis class="tracks-vis"></tracks-vis>
             </div>
           </div>
 
@@ -133,9 +145,17 @@
               var nameNode = artistNode.querySelector('.artist-name');
               nameNode.textContent = artist.get('name');
 
-              
-              var visNode = artistNode.querySelector('.albums-vis');
-              visNode.albums = artist.albums;
+              var albumsVisNode = artistNode.querySelector('.albums-vis');
+              albumsVisNode.albums = artist.albums;
+
+              var tracksVisNode = artistNode.querySelector('.tracks-vis');
+              artist.ensureAllTracks().then(function(tracks) {
+                tracksVisNode.tracks = tracks;
+                tracksVisNode.render();
+                //console.log('forced render ending');
+              }, function(err) {
+                console.warn('Problem fetching tracks for', artist.get('name'));
+              });
 
               dom.appendChild(r);
             }

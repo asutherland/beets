@@ -57,7 +57,7 @@ def _rep(obj, expand=False):
             out['items'] = [_rep(item) for item in obj.items()]
         return out
 
-def json_generator(items, root):
+def json_generator(items, root, expand=False):
     """Generator that dumps list of beets Items or Albums as JSON
 
     :param root:  root key for JSON
@@ -71,7 +71,7 @@ def json_generator(items, root):
             first = False
         else:
             yield ','
-        yield json.dumps(_rep(item))
+        yield json.dumps(_rep(item, expand=expand))
     yield ']}'
 
 def resource(name):
@@ -91,6 +91,26 @@ def resource(name):
             else:
                 return flask.abort(404)
         responder.__name__ = 'get_%s' % name
+        return responder
+    return make_responder
+
+def resource_and_children(name):
+    """Decorates a function to handle RESTful HTTP requests for a resource.
+    """
+    def make_responder(retriever):
+        def responder(ids):
+            entities = [retriever(id) for id in ids]
+            entities = [entity for entity in entities if entity]
+
+            if len(entities) == 1:
+                return flask.jsonify(_rep(entities[0], True))
+            elif entities:
+                return app.response_class(
+                        json_generator(entities, root=name, expand=True),
+                        mimetype='application/json')
+            else:
+                return flask.abort(404)
+        responder.__name__ = 'get_full_%s' % name
         return responder
     return make_responder
 
@@ -194,6 +214,12 @@ def item_query(queries):
 @resource('albums')
 def get_album(id):
     return g.lib.get_album(id)
+
+@app.route('/album/<idlist:ids>/full')
+@resource_and_children('album')
+def get_full_album(id):
+    return g.lib.get_album(id)
+
 
 @app.route('/album/')
 @app.route('/album/query/')
