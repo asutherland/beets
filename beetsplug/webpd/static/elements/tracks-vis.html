@@ -1,6 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
-<polymer-element name="tracks-vis" attributes="tracks xMapping yMapping">
+<polymer-element name="tracks-vis" attributes="artist tracks xMapping yMapping">
 <template>
   <style>
     tracks-vis ^ #render {
@@ -16,17 +16,26 @@
  * Visualize tracks mainly horizontally in an x,y coordinate-space.
  */
 Polymer('tracks-vis', {
+  artist: null,
   tracks: null,
   xMapping: 'danceability',
   yMapping: 'valence',
   
   ready: function() {
   },
+  artistChanged: function() {
+    this.artist.ensureAllTracks().then(function(tracks) {
+      this.tracks = tracks;
+    }.bind(this), function(err) {
+      console.warn('Problem fetching tracks');
+    });
+  },
   tracksChanged: function() {
     this.render();
   },
   render: function() {
-    if (!this.tracks) {
+    var tracks = this.tracks;
+    if (!tracks) {
       return;
     }
     var svg = d3.select(this.$.render);
@@ -53,7 +62,7 @@ Polymer('tracks-vis', {
       .range(['red', 'green', 'blue']);
 
     var trackadots = svg.selectAll('.track')
-        .data(this.tracks.models)
+        .data(tracks.models)
       .enter().append('circle')
         .attr('class', 'track')
         .attr('r', 2)
@@ -62,8 +71,7 @@ Polymer('tracks-vis', {
         .attr('fill', function(track) {
                         return color(track.get('normalbumtype'));
                       })
-        .attr('fill-opacity', 0.3)
-    console.log('lived to quit');
+        .attr('fill-opacity', 0.2)
   }
 });
 </script>

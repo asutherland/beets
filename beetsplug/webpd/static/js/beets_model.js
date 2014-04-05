@@ -121,6 +121,11 @@ var Artist = Backbone.Model.extend({
     this.albums = new Albums();
     this.allTracks = new Tracks();
     this._allTracksPromise = null;
+
+    // invalidate our fancy cached promise if a new album gets added.
+    this.albums.on('add', function() {
+      this._allTracksPromise = null;
+    }.bind(this));
   },
   /**
    * Trigger the load of all tracks for all owned albums and then update the
@@ -139,12 +144,9 @@ var Artist = Backbone.Model.extend({
     // allTracks composite
     // 'this' when that happens.
     this._allTracksPromise = Promise.all(this.albums.map(function(album) {
-      console.log('pending', ++pendingTrackReqs);
-
       return album.ensureTracks();
     })).then(function() {
       this.albums.forEach(function(album) {
-        console.log('done', --pendingTrackReqs);
         // adding the same track more than once is a no-op
         this.allTracks.add(album.tracks.models);
       }.bind(this));

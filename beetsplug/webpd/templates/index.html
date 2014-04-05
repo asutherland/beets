@@ -151,11 +151,7 @@
               albumsVisNode.albums = artist.albums;
 
               var tracksVisNode = artistNode.querySelector('.tracks-vis');
-              artist.ensureAllTracks().then(function(tracks) {
-                tracksVisNode.tracks = tracks;
-              }, function(err) {
-                console.warn('Problem fetching tracks for', artist.get('name'));
-              });
+              tracksVisNode.artist = artist;
 
               dom.appendChild(r);
             }
