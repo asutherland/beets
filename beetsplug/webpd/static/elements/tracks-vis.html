@@ -1,6 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
-<polymer-element name="tracks-vis" attributes="tracks xMapping yMapping" lightdom>
+<polymer-element name="tracks-vis" attributes="tracks xMapping yMapping">
 <template>
   <style>
     tracks-vis ^ #render {
@@ -17,12 +17,10 @@
  */
 Polymer('tracks-vis', {
   tracks: null,
-  height: 0,
   xMapping: 'danceability',
   yMapping: 'valence',
   
   ready: function() {
-    this.render();
   },
   tracksChanged: function() {
     this.render();
@@ -31,8 +29,6 @@ Polymer('tracks-vis', {
     if (!this.tracks) {
       return;
     }
-    console.log('rendering', this.tracks.models.length, this.$.render.toString(), this.$.render);
-
     var svg = d3.select(this.$.render);
 
     var padding = 4;
