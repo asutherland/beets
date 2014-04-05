@@ -9,8 +9,33 @@ var Items = Backbone.Collection.extend({
   comparator: 'track',
 });
 
+/**
+ * Normalize things into a world-view where there are only albums, singles, and
+ * compilations.
+ */
+function normalizeAlbumType(type) {
+  switch (type) {
+    case 'single':
+    case 'remix':
+    case 'dj-mix':
+      return 'single';
+
+    case 'compilation':
+      return 'compilation';
+
+    case 'album':
+    case 'ep':
+    // If we don't know then assume it's an album
+    default:
+      return 'album';
+  }
+}
+
 var Album = Backbone.Model.extend({
-  urlRoot: '/album'
+  urlRoot: '/album',
+  initialize: function() {
+    this.set('normalbumtype', normalizeAlbumType(this.get('albumtype')));
+  }
 });
 var Albums = Backbone.Collection.extend({
   model: Album,

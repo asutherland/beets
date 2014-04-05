@@ -58,35 +58,51 @@ Polymer('albums-vis', {
     var yearWidth = Math.floor(width / numYearBuckets);
     var xTime = d3.scale.linear()
       .domain([FIRST_YEAR, LAST_YEAR])
-      .rangeRound([0, yearWidth * numYearBuckets])
+      .rangeRound([0, yearWidth * (numYearBuckets - 1)])
       .clamp(true);
 
-    // backbone / underscore has groupBy, but we're in the d3 idiom here.
-    var yearBins = d3.nest()
-      .key(function(album) { 
-             var year = album.get('year') || FIRST_YEAR;
-             if (year < FIRST_YEAR) year = FIRST_YEAR;
-             if (year > LAST_YEAR) year = LAST_YEAR;
-             return year;
-           })
-      .entries(this.albums.models);
+    var rectHeight = Math.floor(height / 3);
 
-    var color = d3.scale.linear()
-      .domain([0, 6])
-      .range(['white', 'blue']);
+    function normalizeYear(album) {
+      var year = album.get('year') || FIRST_YEAR;
+      if (year < FIRST_YEAR) year = FIRST_YEAR;
+      if (year > LAST_YEAR) year = LAST_YEAR;
+      return year;
+    }
 
-    var heatRects = svg.selectAll('.year')
-        .data(yearBins)
-      .enter().append('rect')
-        .attr('class', 'year')
-        .attr('width', yearWidth)
-        .attr('height', height)
-        .attr('x', function(bin) { return xTime(parseInt(bin.key, 10)); })
-        .attr('y', 0)
-        .attr('fill', function(bin) { return color(bin.values.length); })
-        .attr('stroke', function(bin) { return color(bin.values.length); });
-console.log('processed');
+    function renderAlbums(type, albums, rowNum, useColor, fullColorAtCount) {
+      // May intentionally be undefined for simplicity for missing types
+      if (!albums) {
+        return;
+      }
 
+      var yearBins = d3.nest()
+        .key(normalizeYear)
+        .entries(albums);
+      console.log(type, 'count:', yearBins.length);
+
+      var color = d3.scale.linear()
+        .domain([0, fullColorAtCount])
+        .range(['white', useColor])
+        .clamp(true);
+
+      var className = type + '-year';
+      var heatRects = svg.selectAll('.' + className)
+          .data(yearBins)
+        .enter().append('rect')
+          .attr('class', 'className')
+          .attr('width', yearWidth)
+          .attr('height', rectHeight)
+          .attr('x', function(bin) { return xTime(parseInt(bin.key, 10)); })
+          .attr('y', rowNum * rectHeight)
+          .attr('fill', function(bin) { return color(bin.values.length); })
+    }
+
+    var albumsByType = this.albums.groupBy('normalbumtype');
+    // album
+    renderAlbums('album', albumsByType.album, 0, 'red', 6);
+    renderAlbums('single', albumsByType.single, 1, 'green', 6);
+    renderAlbums('compilation', albumsByType.compilation, 2, 'blue', 6);
   }
 });
 </script>
