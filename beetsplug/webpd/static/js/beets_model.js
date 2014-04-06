@@ -265,3 +265,26 @@ function populateAlbums(highAlbumId) {
 $.getJSON('/stats', function(stats) {
   populateAlbums(stats.highAlbum);
 });
+
+var gEventSource;
+// Per the spec, the EventSource should automatically reconnect, so we don't
+// need to automatically reconnect, etc.
+function connectEventSource() {
+  if (gEventSource) {
+    console.log('Closing existing event source');
+    try {
+      gEventSource.close();
+    }
+    catch(ex) {
+    }
+  }
+  console.log('connecting to EventSource');
+  gEventSource = new EventSource('/stream');
+  gEventSource.onmessage = function(e) {
+    console.log('DATA', e.data);
+  };
+  gEventSource.onerror = function() {
+    console.log('event source error');
+  };
+}
+connectEventSource();

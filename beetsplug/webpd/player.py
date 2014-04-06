@@ -75,7 +75,7 @@ class BasePlayer(object):
             'random': self.random,
             'repeat': self.repeat,
             'volume': self.volume,
-            'crossfade': self.crossafe,
+            'crossfade': self.crossfade,
             'paused': self.paused,
             'playlistIndex': self.current_index,
             'playingTrackId': playing_track_id,

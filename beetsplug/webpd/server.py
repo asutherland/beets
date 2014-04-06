@@ -284,7 +284,7 @@ def control_pause():
     pass
 
 
-STREAM_HEARTBEAT_SECS = 5
+STREAM_HEARTBEAT_SECS = 10
 
 # Streaming updates
 class EventStreamer(object):
@@ -301,41 +301,48 @@ class EventStreamer(object):
     """
     def __init__(self):
         g.streamer = self
-        self.q = Queue()
+        self.q = Queue.Queue()
+        print 'stream created'
         sig_player_state_changed.connect(self.player_state_change)
     
     def stream(self):
-        while True:
-            try:
-                item = self.q.get(True, STREAM_HEARTBEAT_SECS)
-                self.q.task_done() # we do not care about this task stuff
-                yield 'data: ' + json.dumps(q) + '\n\n';
-            except Queue.Empty:
-                yield 'data: {"type": "hearbeat"}\n\n'
+        print 'starting stream'
+        try:
+            while True:
+                try:
+                    item = self.q.get(True, STREAM_HEARTBEAT_SECS)
+                    self.q.task_done() # we do not care about this task stuff
+                    yield 'data: ' + json.dumps(item) + '\n\n';
+                except Queue.Empty:
+                    yield 'data: {"type": "heartbeat"}\n\n'
+        finally:
+            # cleanup on our way out of the thread.  hopefully no leaks...
+            self.cleanup()
 
-    def player_state_change(self, sender, event):
-        player = sender
+    def player_state_change(self, sender, player, event):
         data = {
             'type': 'player',
             'event': event,
             'status': player.dict_status(),
         }
+        self.q.put(data)
 
     def cleanup(self):
+        print 'cleaning up stream'
         sig_player_state_changed.disconnect(self.player_state_change)
 
 
 @app.route('/stream')
 def stream():
     g.streamer = EventStreamer()
-    return flask.Response(streamer.stream(),
+    return flask.Response(g.streamer.stream(),
                           mimetype="text/event-stream")
 
 @app.teardown_appcontext
 def teardown_streamer(exception):
     streamer = g.get('streamer', None)
     if streamer:
-        streamer.cleanup()
+        #streamer.cleanup()
         g.streamer = None
 
 # UI.
@@ -345,7 +352,7 @@ def home():
     return flask.render_template('index.html')
 
 def player_state_change(player, event_name):
-    sig_player_state_changed.send(event_name, player=player, event=event_name)
+    sig_player_state_changed.send(player=player, event=event_name)
 
 def run_server(lib, host=None, port=None, debug=None):
     app.config['lib'] = lib
