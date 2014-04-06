@@ -23,7 +23,7 @@
       }
 
       polymer-virtual-list ^ .artist:hover {
-        background-color: #eee;
+        background-color: #f8f8f8;
       }
 
       polymer-virtual-list ^ .artist-name {
@@ -86,13 +86,6 @@
       ready: function() {
         window.polymerArtistList = this;
         this.data = allArtists;
-        this.$.list.addEventListener('polymer-list-generate-page',
-                                     function(e, detail) {
-          // for unclear reasons, the automated bind is not working or is
-          // getting cancelled/reaped automatically...
-          //console.log('manual event listener seeing event');
-          this.generateListPage(e, e.impl.detail);
-        }.bind(this));
       },
       tapAction: function(e) {
         console.log('tap', e);
