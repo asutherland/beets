@@ -345,6 +345,10 @@ def player_state_change(player, event_name):
 def run_server(lib, host=None, port=None, debug=None):
     app.config['lib'] = lib
     app.config['player'] = Player(lib, player_state_change)
+    # This app is under heavy development; always set the static-file cache
+    # duration really low, but high enough that silly multiple requests will
+    # not need to be serviced.
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 2;
     app.run(host=host,
             port=port,
             debug=debug, threaded=True)

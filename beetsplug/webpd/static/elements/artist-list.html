@@ -6,15 +6,15 @@
 <polymer-element name="artist-list">
   <template>
     <style>
-      polymer-virtual-list {
+      artist-list {
+        display: inline-block;
+      }
+
+      #list {
         height: 100%;
       }
 
-      polymer-virtual-list ^ {
-        position: relative;
-      }
-
-      polymer-virtual-list ^ .artist {
+      .artist {
         position: relative;
         box-sizing: border-box;
         height: 40px;
@@ -22,11 +22,11 @@
         border-bottom: 1px solid #ddd;
       }
 
-      polymer-virtual-list ^ .artist:hover {
+      .artist:hover {
         background-color: #f8f8f8;
       }
 
-      polymer-virtual-list ^ .artist-name {
+      .artist-name {
         display: block;
         position: absolute;
         top: 0;
@@ -39,7 +39,7 @@
         vertical-align: 50%;
       }
 
-      polymer-virtual-list ^ .albums-vis {
+      .albums-vis {
         display: block;
         position: absolute;
         left: 20rem;
@@ -48,7 +48,7 @@
         height: 39px;
       }
 
-      polymer-virtual-list ^ .tracks-vis {
+      .tracks-vis {
         display: block;
         position: absolute;
         right: 0;
@@ -57,7 +57,7 @@
         height: 39px;
       }
 
-      polymer-virtual-list ^ .divider {
+      .divider {
         background: grey;
         color: white;
         height: 30px;
@@ -80,7 +80,6 @@
 
   </template>
   <script>
-  (function() {
     Polymer('artist-list', {
       count: 0,
       ready: function() {
@@ -127,6 +126,5 @@
         //this.$.list.reset();
       }
     });
-  })();  
   </script>
 </polymer-element>

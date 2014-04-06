@@ -19,8 +19,28 @@ Polymer('tracks-vis', {
   tracks: null,
   xMapping: 'danceability',
   yMapping: 'valence',
+  // This guard was introduced because of life-cycle issues relating to an
+  // attempt to cause us to render ourselves after we were already detached
+  // from the DOM or in the process of being detached from the DOM.  Because
+  // of the micro-task magic that is used and how the virtual-list works, I
+  // expect we do not actually need this guard or the related logic for
+  // startup purposes.  But I can't claim to understand things sufficiently
+  // right now that it makes sense to risk removing this and shooting myself
+  // in the foot.
+  //
+  // NB: The life-cycle thing is likely a result of our use of promises and
+  // high rates of scrolling which can cause the virtual list to destroy things
+  // rather quickly
+  _ready: false,
   
-  ready: function() {
+  domReady: function() {
+    this._ready = true;
+    if (this.tracks) {
+      this.render();
+    }
+  },
+  detached: function() {
+    this._ready = false;
   },
   artistChanged: function() {
     this.artist.ensureAllTracks().then(function(tracks) {
@@ -30,11 +50,13 @@ Polymer('tracks-vis', {
     });
   },
   tracksChanged: function() {
-    this.render();
+    if (this._ready) {
+      this.render();
+    }
   },
   render: function() {
     var tracks = this.tracks;
-    if (!tracks) {
+    if (!tracks || !this._ready) {
       return;
     }
     var svg = d3.select(this.$.render);
@@ -43,6 +65,13 @@ Polymer('tracks-vis', {
 
     var width = parseInt(svg.style("width")) - padding;
     var height = parseInt(svg.style("height")) - padding;
+
+    if (isNaN(width)) {
+      // isNaN means the style resolution failed which means we were removed
+      // from the DOM tree.  There is no need to reschedule ourselves because
+      // we're dead.  Just return.
+      return;
+    }
 
     var xProp = this.xMapping;
     var x = d3.scale.linear()
@@ -60,13 +89,21 @@ Polymer('tracks-vis', {
       .domain(['album', 'single', 'compilation'])
       .range(['red', 'green', 'blue']);
 
+    function normNum(val) {
+      if (val == null) {
+        return 0;
+      }
+      var floatVal = parseFloat(val);
+      return floatVal;
+    }
+
     var trackadots = svg.selectAll('.track')
         .data(tracks.models)
       .enter().append('circle')
         .attr('class', 'track')
         .attr('r', 2)
-        .attr('cx', function(track) { return x(track.get(xProp) || 0); })
-        .attr('cy', function(track) { return y(track.get(yProp) || 0); })
+        .attr('cx', function(track) { return x(normNum(track.get(xProp))); })
+        .attr('cy', function(track) { return y(normNum(track.get(yProp))); })
         .attr('fill', function(track) {
                         return color(track.get('normalbumtype'));
                       })
