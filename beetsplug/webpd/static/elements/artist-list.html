@@ -1,0 +1,139 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/polymer-list/polymer-virtual-list.html">
+<link rel="import" href="albums-vis.html">
+<link rel="import" href="tracks-vis.html">
+<polymer-element name="artist-list">
+  <template>
+    <style>
+      polymer-virtual-list {
+        height: 100%;
+      }
+
+      polymer-virtual-list ^ {
+        position: relative;
+      }
+
+      polymer-virtual-list ^ .artist {
+        position: relative;
+        box-sizing: border-box;
+        height: 40px;
+        background-color: white;
+        border-bottom: 1px solid #ddd;
+      }
+
+      polymer-virtual-list ^ .artist:hover {
+        background-color: #eee;
+      }
+
+      polymer-virtual-list ^ .artist-name {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 5px;
+        color: black;
+        font-weight: bold;
+        width: 20rem;
+        line-height: 30px;
+        vertical-align: 50%;
+      }
+
+      polymer-virtual-list ^ .albums-vis {
+        display: block;
+        position: absolute;
+        left: 20rem;
+        top: 0;
+        width: calc(65% - 20rem - 8px);
+        height: 39px;
+      }
+
+      polymer-virtual-list ^ .tracks-vis {
+        display: block;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: calc(35%);
+        height: 39px;
+      }
+
+      polymer-virtual-list ^ .divider {
+        background: grey;
+        color: white;
+        height: 30px;
+        line-height: 30px;
+        padding: 0 10px;
+        text-transform: uppercase;
+      }
+    </style>
+    <polymer-virtual-list id="list" on-polymer-list-generate-page="{{generateListPage}}" count="{{count}}" pageSize="40">
+    </polymer-virtual-list>
+
+      <div id="listItem" class="item">
+        <div class="divider"></div>
+        <div class="artist">
+          <div class="artist-name"></div>
+          <albums-vis class="albums-vis"></albums-vis>
+          <tracks-vis class="tracks-vis"></tracks-vis>
+        </div>
+      </div>
+
+  </template>
+  <script>
+  (function() {
+    Polymer('artist-list', {
+      count: 0,
+      ready: function() {
+        window.polymerArtistList = this;
+        this.data = allArtists;
+        this.$.list.addEventListener('polymer-list-generate-page',
+                                     function(e, detail) {
+          // for unclear reasons, the automated bind is not working or is
+          // getting cancelled/reaped automatically...
+          //console.log('manual event listener seeing event');
+          this.generateListPage(e, e.impl.detail);
+        }.bind(this));
+      },
+      tapAction: function(e) {
+        console.log('tap', e);
+      },
+      generateListPage: function(e, detail) {
+        //console.log('requested:', detail.start, detail.end);
+        var dom = document.createDocumentFragment();
+        for (var i = detail.start, l=detail.end, d, r;
+             (i<l) && (d=this.data.at(i)); i++) {
+
+          r = this.$.listItem.cloneNode(true);
+          var item = r;
+          var divider = r.querySelector('.divider');
+          divider.style.display = d.divider ? null : 'none';
+          divider.textContent = d.divider;
+
+          var artist = d;
+          var artistNode = r.querySelector('.artist');
+          var nameNode = artistNode.querySelector('.artist-name');
+          nameNode.textContent = artist.get('name');
+
+          var albumsVisNode = artistNode.querySelector('.albums-vis');
+          albumsVisNode.albums = artist.albums;
+
+          var tracksVisNode = artistNode.querySelector('.tracks-vis');
+          tracksVisNode.artist = artist;
+
+          dom.appendChild(r);
+        }
+        detail.page.appendChild(dom);
+      },
+      refresh: function() {
+        //console.log('touching count');
+        this.count = this.data.length;
+        //console.log('touching $.list count');
+        this.$.list.count = this.count;
+        //this.$.list.refresh();
+        //console.log('triggering reset');
+        //this.$.list.reset();
+      }
+    });
+  })();  
+  </script>
+</polymer-element>
