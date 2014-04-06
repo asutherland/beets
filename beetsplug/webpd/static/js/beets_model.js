@@ -1,5 +1,10 @@
 'use strict';
 
+function makeLocaleComparator(fieldName) {
+  return function(a, b) {
+    return a.get(fieldName).localeCompare(b.get(fieldName));
+  };
+}
 
 var Track = Backbone.Model.extend({
   urlRoot: '/item',
@@ -77,11 +82,11 @@ var Album = Backbone.Model.extend({
 });
 var Albums = Backbone.Collection.extend({
   model: Album,
-  comparator: 'album',
+  comparator: makeLocaleComparator('album'),
 });
 var AlbumsWithComputedArtists = Backbone.Collection.extend({
   model: Album,
-  comparator: 'album',
+  comparator: makeLocaleComparator('album'),
   initialize: function() {
     // The computed artists collection
     this.artists = new Artists();
@@ -157,7 +162,7 @@ var Artist = Backbone.Model.extend({
 });
 var Artists = Backbone.Collection.extend({
   model: Artist,
-  comparator: 'name',
+  comparator: makeLocaleComparator('name'),
 });
 
 var allAlbums = new AlbumsWithComputedArtists();
