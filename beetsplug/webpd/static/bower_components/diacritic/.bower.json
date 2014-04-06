@@ -1,0 +1,38 @@
+{
+  "name": "diacritic",
+  "main": "Diacritics.js",
+  "version": "0.0.2",
+  "authors": [
+    "Nijiko Yonskai <nijikokun@gmail.com>"
+  ],
+  "description": "Removes accents / diacritics from strings, sentences, and paragraphs fast and effeciently.",
+  "keywords": [
+    "diacritics",
+    "accents",
+    "removal",
+    "cleaner",
+    "cleanse",
+    "clean",
+    "string",
+    "manipulation"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "homepage": "https://github.com/Nijikokun/Diacritics.js",
+  "_release": "0.0.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.0.2",
+    "commit": "17963caae518d40cd207ca9af4e93f1de74e2c46"
+  },
+  "_source": "git://github.com/Nijikokun/Diacritics.js.git",
+  "_target": "~0.0.2",
+  "_originalSource": "diacritic",
+  "_direct": true
+}
