@@ -16,7 +16,7 @@ from beets import ui
 from beets import util
 import beets.library
 import flask
-from flask import g
+from flask import g, request
 from werkzeug.routing import BaseConverter, PathConverter
 import os
 import json
@@ -272,7 +272,12 @@ def control_enqueue():
 
 @app.route('/control/play', methods=['POST'])
 def control_play():
-    pass
+    player = g.player
+    if request.form.has_key('item'):
+        item = g.lib.get_item(request.form['item'])
+        player.add(item)
+        player.playid(item.id)
+        return 'I HEAR AND OBEY'
 
 @app.route('/control/pause', methods=['POST'])
 def control_pause():

@@ -46,6 +46,9 @@ var Track = Backbone.Model.extend({
   urlRoot: '/item',
   initialize: function() {
     this.set('normalbumtype', normalizeAlbumType(this.get('albumtype')));
+  },
+  play: function() {
+    $.post('/control/play', { item: this.get('id') });
   }
 });
 var Tracks = Backbone.Collection.extend({

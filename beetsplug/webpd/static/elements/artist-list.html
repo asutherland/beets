@@ -163,6 +163,11 @@
       },
       artistClicked: function(artist) {
         console.log('artist clicked', artist);
+        var firstAlbum = artist.albums.at(0);
+        console.log('  first album', firstAlbum);
+        var firstTrack = firstAlbum.tracks.at(0);
+        console.log('  first track', firstTrack);
+        firstTrack.play();
       },
       generateListPage: function(e, detail) {
         //console.log('requested:', detail.start, detail.end);

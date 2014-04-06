@@ -22,6 +22,21 @@ import logging
 import random
 import time
 
+def cast_arg(t, val):
+    """Attempts to call t on val, raising a ArgumentTypeError
+    on ValueError.
+
+    If 't' is the special string 'intbool', attempts to cast first
+    to an int and then to a bool (i.e., 1=True, 0=False).
+    """
+    if t == 'intbool':
+        return cast_arg(bool, cast_arg(int, val))
+    else:
+        try:
+            return t(val)
+        except ValueError:
+            raise ArgumentTypeError()
+
 
 
 # Loggers.
@@ -265,7 +280,7 @@ class BasePlayer(object):
         else:
             return self.play()
 
-    def cmd_previous(self):
+    def previous(self):
         """Step back to the last song."""
         self.current_index = self._prev_idx()
         if self.current_index < 0:
@@ -289,7 +304,7 @@ class BasePlayer(object):
 
         if index == -1: # No index specified: start where we are.
             if not self.playlist: # Empty playlist: stop immediately.
-                return self.stop(conn)
+                return self.stop()
             if self.current_index == -1: # No current song.
                 self.current_index = 0 # Start at the beginning.
             # If we have a current song, just stay there.
@@ -305,9 +320,9 @@ class BasePlayer(object):
             index = -1
         else:
             index = self._id_to_index(track_id)
-        return self.play(conn, index)
+        return self.play(index)
 
-    def stop(self, conn):
+    def stop(self):
         """Stop playback."""
         self.current_index = -1
         self.paused = False
@@ -395,26 +410,11 @@ class Player(BasePlayer):
 
     # Playlist manipulation.
 
-    def _add(self, path, send_id=False):
-        """Adds a track or directory to the playlist, specified by the
-        path. If `send_id`, write each item's id to the client.
+    def add(self, item):
+        """Add a track to the playlist.
         """
-        for item in self._all_items(self._resolve_path(path)):
-            self.playlist.append(item)
-            if send_id:
-                yield u'Id: ' + unicode(item.id)
+        self.playlist.append(item)
         self.playlist_version += 1
-
-    def add(self, path):
-        """Adds a track or directory to the playlist, specified by a
-        path.
-        """
-        return self._add(path, False)
-
-    def addid(self, path):
-        """Same as `cmd_add` but sends an id back to the client."""
-        return self._add(path, True)
-
 
     # Playback control. The functions below hook into the
     # half-implementations provided by the base class. Together, they're
@@ -423,7 +423,7 @@ class Player(BasePlayer):
     def play(self, index=-1):
         new_index = index != -1 and index != self.current_index
         was_paused = self.paused
-        super(Player, self).cmd_play(conn, index)
+        super(Player, self).play(index)
 
         if self.current_index > -1: # Not stopped.
             if was_paused and not new_index:
@@ -434,7 +434,7 @@ class Player(BasePlayer):
                 self.player.play_file(self.playlist[self.current_index].path)
                 self.listener(self, 'track')
 
-    def cmd_pause(self, state=None):
+    def pause(self, state=None):
         super(Player, self).pause(state)
         if self.paused:
             self.player.pause()
