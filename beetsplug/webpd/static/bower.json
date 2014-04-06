@@ -10,6 +10,10 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "~0.2.1"
+    "polymer": "Polymer/polymer",
+    "polymer-list": "PolymerLabs/polymer-list",
+    "polymer-ui-pages": "PolymerLabs/polymer-ui-pages",
+    "polymer-ui-scaffold": "PolymerLabs/polymer-ui-scaffold",
+    "polymer-ui-tabs": "PolymerLabs/polymer-ui-tabs"
   }
 }

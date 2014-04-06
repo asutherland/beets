@@ -44,7 +44,6 @@ license that can be found in the LICENSE file.
       },
       // re-render at the top
       reset: function() {
-console.log('pvl: reset');
         this.initialized = false;
         // discover dimensionality
         this.$.viewport.classList.toggle('horizontal', this.horizontal);
@@ -59,7 +58,6 @@ console.log('pvl: reset');
       },
       // completely refresh rendering at the current scroll position
       refresh: function() {
-console.log('pvl: refresh');
         this.pageCount = Math.ceil(this.count/this.pageSize);
         this.$.viewport.textContent = '';
         this.pages = [];
@@ -100,12 +98,10 @@ console.log('pvl: refresh');
         this.$.list[this.metrics.scrollOffset] = offset;
       },
       generatePageContent: function(page, start, end) {
-console.log('firing', 'polymer-list-generate-page', start, end);
         this.fire('polymer-list-generate-page', 
             {page: page, start: start, end: end});
       },
       generatePage: function(pageNum) {
-console.log('generating page', pageNum, 'of', this.pageCount);
         if (pageNum < this.pageCount) {
           var p = document.createElement('div');
           p.pageNum = pageNum;
