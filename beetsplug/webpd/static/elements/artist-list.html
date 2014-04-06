@@ -24,6 +24,7 @@
         height: 40px;
         background-color: white;
         border-bottom: 1px solid #ddd;
+        cursor: default;
       }
 
       .artist:hover {
@@ -160,6 +161,9 @@
         }
         this.refresh();
       },
+      artistClicked: function(artist) {
+        console.log('artist clicked', artist);
+      },
       generateListPage: function(e, detail) {
         //console.log('requested:', detail.start, detail.end);
         var dom = document.createDocumentFragment();
@@ -175,6 +179,14 @@
 
           var artist = d;
           var artistNode = r.querySelector('.artist');
+          // Because of the shadow DOM/etc. if we try and use the built-in
+          // event-binding stuff, say via an on-click on the
+          // polymer-virtual-list, the event we get out of that will have a
+          // target of the polymer-virtual-list itself because it's opaque to
+          // us.  Since I don't currently want to modify that widget, this is
+          // basically our simplest option.
+          artistNode.addEventListener(
+            'click', this.artistClicked.bind(this, artist), false);
           var nameNode = artistNode.querySelector('.artist-name');
           nameNode.textContent = artist.get('name');
 
