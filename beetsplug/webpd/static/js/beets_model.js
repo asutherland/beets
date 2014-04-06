@@ -1,8 +1,44 @@
 'use strict';
+// XXX this really wants to go into a proper module idiom
 
-function makeLocaleComparator(fieldName) {
+var PUNC_RE = /[-`~@#$%^&*()_=+\[\]{}\\|;:'"",<.>/?]/g;
+
+// see the docs for makeLocaleAndPuncComparator.  This is now used to optimize
+// sorting by just computing a sort name for the artist here in the UI.  Note
+// that beets already has a concept of having a sort name, but at least since
+// this isn't populated in my DB right now, we just do this.
+function normalizeName(name) {
+  return Diacritics.clean(name).toLowerCase().replace(PUNC_RE, '');
+}
+
+/**
+ * Create a comparator that's basically localeCompare plus pretending
+ * punctuation does not exist.  For consistency, this is basically the same
+ * logic we use for filtering artists except that ignores white-space.
+ *
+ * Note that while we could use localeCompare after our normalization, we just
+ * use straight-up comparison after normalizing.
+ *
+ * Also note that localeCompare now supports an options dict which would let us
+ * tell it to ignorePunctuation.  Unfortunately, that's in Firefox 29 and stable
+ * Firefox is 28, so we can't really do that yet.
+ */
+function makeLocaleAndPuncComparator(fieldName) {
   return function(a, b) {
-    return a.get(fieldName).localeCompare(b.get(fieldName));
+    //return a.get(fieldName).localeCompare(b.get(fieldName));
+    var normA = Diacritics.clean(a.get(fieldName)).toLowerCase()
+                  .replace(PUNC_RE, '');
+    var normB = Diacritics.clean(b.get(fieldName)).toLowerCase()
+                  .replace(PUNC_RE, '');
+    if (normA < normB) {
+      return -1;
+    }
+    else if (normA > normB) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
   };
 }
 
@@ -49,6 +85,7 @@ var Album = Backbone.Model.extend({
   urlRoot: '/album',
   initialize: function() {
     this.set('normalbumtype', normalizeAlbumType(this.get('albumtype')));
+    this.set('normalbum', normalizeName(this.get('album')));
     this.tracks = new Tracks();
     this._trackFetchPromise = null;
   },
@@ -82,11 +119,11 @@ var Album = Backbone.Model.extend({
 });
 var Albums = Backbone.Collection.extend({
   model: Album,
-  comparator: makeLocaleComparator('album'),
+  comparator: 'normalbum',
 });
 var AlbumsWithComputedArtists = Backbone.Collection.extend({
   model: Album,
-  comparator: makeLocaleComparator('album'),
+  comparator: 'normalbum',
   initialize: function() {
     // The computed artists collection
     this.artists = new Artists();
@@ -101,7 +138,10 @@ var AlbumsWithComputedArtists = Backbone.Collection.extend({
       }
       else {
         // console.log('creating artist', artistName);
-        artist = new Artist({ name: artistName });
+        artist = new Artist({
+          name: artistName,
+          normname: normalizeName(artistName)
+        });
         this.artists.add(artist);
         this.artistByName[artistName] = artist;
       }
@@ -162,7 +202,7 @@ var Artist = Backbone.Model.extend({
 });
 var Artists = Backbone.Collection.extend({
   model: Artist,
-  comparator: makeLocaleComparator('name'),
+  comparator: 'normname',
 });
 
 var allAlbums = new AlbumsWithComputedArtists();

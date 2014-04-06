@@ -1,17 +1,21 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <link rel="import" href="../bower_components/polymer-list/polymer-virtual-list.html">
+
+<link rel="import" href="../bower_components/polymer-ui-toolbar/polymer-ui-toolbar.html">
+
 <link rel="import" href="albums-vis.html">
 <link rel="import" href="tracks-vis.html">
 <polymer-element name="artist-list">
   <template>
     <style>
       artist-list {
-        display: inline-block;
+        display: flex;
+        flex-flow: column;
       }
 
       #list {
-        height: 100%;
+        flex: 1;
       }
 
       .artist {
@@ -34,17 +38,18 @@
         padding: 5px;
         color: black;
         font-weight: bold;
-        width: 20rem;
+        width: 14rem;
         line-height: 30px;
         vertical-align: 50%;
+        overflow: hidden;
       }
 
       .albums-vis {
         display: block;
         position: absolute;
-        left: 20rem;
+        left: calc(14rem + 10px);
         top: 0;
-        width: calc(65% - 20rem - 8px);
+        width: calc(60% - 14rem - 8px);
         height: 39px;
       }
 
@@ -53,7 +58,7 @@
         position: absolute;
         right: 0;
         top: 0;
-        width: calc(35%);
+        width: calc(40%);
         height: 39px;
       }
 
@@ -65,11 +70,36 @@
         padding: 0 10px;
         text-transform: uppercase;
       }
+
+      #filterMinLabel {
+        font-size: medium;
+        margin: 0 0.4em;
+      }
+      #filterMinInput {
+        width: 3em;
+        vertical-align: middle;
+      }
+      #filterMinRange {
+        width: 60px;
+        vertical-align: middle;
+      }
     </style>
+    
+    <polymer-ui-toolbar theme="polymer-ui-light-theme">
+      <label id="filterNameLabel">Name: 
+        <input id="filterNameInput" type="text" value="{{ filterName }}">
+      </label>
+      <label id="filterMinLabel">Min Albums:
+        <input id="filterMinInput" type="number" value="{{ filterMinAlbums }}">
+        <input id="filterMinRange" type="range" value="{{ filterMinAlbums }}"
+               min=0 max=30>
+      </label>
+    </polymer-ui-toolbar>
+
     <polymer-virtual-list id="list" on-polymer-list-generate-page="{{generateListPage}}" count="{{count}}" pageSize="40">
     </polymer-virtual-list>
 
-      <div id="listItem" class="item">
+      <div id="listItem" class="item" style="display: none;">
         <div class="divider"></div>
         <div class="artist">
           <div class="artist-name"></div>
@@ -82,21 +112,63 @@
   <script>
     Polymer('artist-list', {
       count: 0,
-      ready: function() {
-        window.polymerArtistList = this;
-        this.data = allArtists;
+      filterMinAlbums: 0,
+      filterName: '',
+      observe: {
+        filterMinAlbums: 'updateFilter',
+        filterName: 'updateFilter',
       },
-      tapAction: function(e) {
-        console.log('tap', e);
+      ready: function() {
+        // There is a bit of ugliness where beets_model notifies us when it has
+        // completed loading things.  This is a result of initial hackiness
+        // related to issues experienced with event bindings not occurring and
+        // some efficiency and concerns and what not.
+        //
+        // I am still learning more about the polymer idiom for things like
+        // this and need to evaluate it against using more traditional pure-JS
+        // logic.  The simplest thing might be to stick with hacky global
+        // namespace clobbering but just having us subscribe to all updates.
+        // However / unfortunately, the virtual-list widget has no concept of
+        // splice-based list manipulation, so just waiting for the load rather
+        // than constantly invalidating the display may still be the best thing
+        // for now, at least until a fancier virtual-list implementation that
+        // can directly bind to backbone/etc. is available.
+        window.polymerArtistList = this;
+        this.artists = new FilteredCollection(window.allArtists);
+      },
+      updateFilter: function() {
+        this.artists.resetFilters();
+        if (this.filterMinAlbums) {
+          var minAlbums = this.filterMinAlbums;
+          this.artists.filterBy('minAlbums', function(artist) {
+            return artist.albums.length >= minAlbums;
+          });
+        }
+        // Normalize our search pattern by accent-folding, lower-casing, and
+        // nuking punctuation and whitespace.  Note that we don't use \W because
+        // it implies latin/ASCII which would then obliterate CJK patterns.
+        // There are 2 double-quotes because my .emacs needs work...
+        var puncAndWS = /[- \t`~@#$%^&*()_=+\[\]{}\\|;:'"",<.>/?]/g;
+        var normalizedName = Diacritics.clean(this.filterName)
+                               .toLowerCase().replace(puncAndWS, '');
+        if (normalizedName) {
+          this.artists.filterBy('name', function(artist) {
+            var normalizedArtist = Diacritics.clean(artist.get('name'))
+                                     .toLowerCase().replace(puncAndWS, '');
+            return (normalizedArtist.indexOf(normalizedName) !== -1);
+          });
+        }
+        this.refresh();
       },
       generateListPage: function(e, detail) {
         //console.log('requested:', detail.start, detail.end);
         var dom = document.createDocumentFragment();
         for (var i = detail.start, l=detail.end, d, r;
-             (i<l) && (d=this.data.at(i)); i++) {
+             (i<l) && (d=this.artists.at(i)); i++) {
 
           r = this.$.listItem.cloneNode(true);
           var item = r;
+          r.style.display = null;
           var divider = r.querySelector('.divider');
           divider.style.display = d.divider ? null : 'none';
           divider.textContent = d.divider;
@@ -117,13 +189,7 @@
         detail.page.appendChild(dom);
       },
       refresh: function() {
-        //console.log('touching count');
-        this.count = this.data.length;
-        //console.log('touching $.list count');
-        this.$.list.count = this.count;
-        //this.$.list.refresh();
-        //console.log('triggering reset');
-        //this.$.list.reset();
+        this.count = this.artists.length;
       }
     });
   </script>
