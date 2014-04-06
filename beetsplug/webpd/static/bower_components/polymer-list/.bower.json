@@ -6,14 +6,15 @@
     "polymer-selection": "Polymer/polymer-selection#0.2.2"
   },
   "version": "0.2.2",
-  "homepage": "https://github.com/PolymerLabs/polymer-list",
+  "homepage": "https://github.com/Polymer/polymer-list",
   "_release": "0.2.2",
   "_resolution": {
     "type": "version",
     "tag": "0.2.2",
     "commit": "867626f72cd63ba9a2ca4d69d098e5ba2831fe9e"
   },
-  "_source": "git://github.com/PolymerLabs/polymer-list.git",
-  "_target": "*",
-  "_originalSource": "PolymerLabs/polymer-list"
+  "_source": "git://github.com/Polymer/polymer-list.git",
+  "_target": "~0.2.2",
+  "_originalSource": "Polymer/polymer-list",
+  "_direct": true
 }

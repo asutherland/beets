@@ -10,14 +10,14 @@
     "polymer-ui-icon-button": "Polymer/polymer-ui-icon-button#0.2.2"
   },
   "version": "0.2.2",
-  "homepage": "https://github.com/PolymerLabs/polymer-ui-scaffold",
+  "homepage": "https://github.com/Polymer/polymer-ui-scaffold",
   "_release": "0.2.2",
   "_resolution": {
     "type": "version",
     "tag": "0.2.2",
     "commit": "3aaac06b10def25aa646b7916717b5528d6857a4"
   },
-  "_source": "git://github.com/PolymerLabs/polymer-ui-scaffold.git",
-  "_target": "*",
-  "_originalSource": "PolymerLabs/polymer-ui-scaffold"
+  "_source": "git://github.com/Polymer/polymer-ui-scaffold.git",
+  "_target": "0.2.2",
+  "_originalSource": "Polymer/polymer-ui-scaffold"
 }
