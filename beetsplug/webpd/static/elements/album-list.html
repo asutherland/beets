@@ -1,0 +1,212 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/polymer-list/polymer-virtual-list.html">
+
+<link rel="import" href="../bower_components/polymer-ui-toolbar/polymer-ui-toolbar.html">
+
+<link rel="import" href="tracks-vis.html">
+<polymer-element name="album-list">
+  <template>
+    <style>
+      album-list {
+        display: flex;
+        flex-flow: column;
+      }
+
+      #list {
+        flex: 1;
+      }
+
+      .artist {
+        position: relative;
+        box-sizing: border-box;
+        height: 40px;
+        background-color: white;
+        border-bottom: 1px solid #ddd;
+        cursor: default;
+      }
+
+      .artist:hover {
+        background-color: #f8f8f8;
+      }
+
+      .artist-name {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 5px;
+        color: black;
+        font-weight: bold;
+        width: 14rem;
+        line-height: 30px;
+        vertical-align: 50%;
+        overflow: hidden;
+      }
+
+      .albums-vis {
+        display: block;
+        position: absolute;
+        left: calc(14rem + 10px);
+        top: 0;
+        width: calc(60% - 14rem - 8px);
+        height: 39px;
+      }
+
+      .tracks-vis {
+        display: block;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: calc(40%);
+        height: 39px;
+      }
+
+      .divider {
+        background: grey;
+        color: white;
+        height: 30px;
+        line-height: 30px;
+        padding: 0 10px;
+        text-transform: uppercase;
+      }
+
+      #filterMinLabel {
+        font-size: medium;
+        margin: 0 0.4em;
+      }
+      #filterMinInput {
+        width: 3em;
+        vertical-align: middle;
+      }
+      #filterMinRange {
+        width: 60px;
+        vertical-align: middle;
+      }
+    </style>
+    
+    <polymer-ui-toolbar theme="polymer-ui-light-theme">
+      <label id="filterNameLabel">Name: 
+        <input id="filterNameInput" type="text" value="{{ filterName }}">
+      </label>
+      <label id="filterMinLabel">Min Albums:
+        <input id="filterMinInput" type="number" value="{{ filterMinAlbums }}">
+        <input id="filterMinRange" type="range" value="{{ filterMinAlbums }}"
+               min=0 max=30>
+      </label>
+    </polymer-ui-toolbar>
+
+    <polymer-virtual-list id="list" on-polymer-list-generate-page="{{generateListPage}}" count="{{count}}" pageSize="40">
+    </polymer-virtual-list>
+
+      <div id="listItem" class="item" style="display: none;">
+        <div class="divider"></div>
+        <div class="artist">
+          <div class="artist-name"></div>
+          <albums-vis class="albums-vis"></albums-vis>
+          <tracks-vis class="tracks-vis"></tracks-vis>
+        </div>
+      </div>
+
+  </template>
+  <script>
+    Polymer('album-list', {
+      count: 0,
+      filterMinAlbums: 0,
+      filterName: '',
+      observe: {
+        filterMinAlbums: 'updateFilter',
+        filterName: 'updateFilter',
+      },
+      ready: function() {
+        // There is a bit of ugliness where beets_model notifies us when it has
+        // completed loading things.  This is a result of initial hackiness
+        // related to issues experienced with event bindings not occurring and
+        // some efficiency and concerns and what not.
+        //
+        // I am still learning more about the polymer idiom for things like
+        // this and need to evaluate it against using more traditional pure-JS
+        // logic.  The simplest thing might be to stick with hacky global
+        // namespace clobbering but just having us subscribe to all updates.
+        // However / unfortunately, the virtual-list widget has no concept of
+        // splice-based list manipulation, so just waiting for the load rather
+        // than constantly invalidating the display may still be the best thing
+        // for now, at least until a fancier virtual-list implementation that
+        // can directly bind to backbone/etc. is available.
+        window.polymerArtistList = this;
+        this.artists = new FilteredCollection(window.allArtists);
+      },
+      updateFilter: function() {
+        this.artists.resetFilters();
+        if (this.filterMinAlbums) {
+          var minAlbums = this.filterMinAlbums;
+          this.artists.filterBy('minAlbums', function(artist) {
+            return artist.albums.length >= minAlbums;
+          });
+        }
+        // Normalize our search pattern by accent-folding, lower-casing, and
+        // nuking punctuation and whitespace.  Note that we don't use \W because
+        // it implies latin/ASCII which would then obliterate CJK patterns.
+        // There are 2 double-quotes because my .emacs needs work...
+        var puncAndWS = /[- \t`~@#$%^&*()_=+\[\]{}\\|;:'"",<.>/?]/g;
+        var normalizedName = Diacritics.clean(this.filterName)
+                               .toLowerCase().replace(puncAndWS, '');
+        if (normalizedName) {
+          this.artists.filterBy('name', function(artist) {
+            var normalizedArtist = Diacritics.clean(artist.get('name'))
+                                     .toLowerCase().replace(puncAndWS, '');
+            return (normalizedArtist.indexOf(normalizedName) !== -1);
+          });
+        }
+        this.refresh();
+      },
+      artistClicked: function(artist) {
+        console.log('artist clicked', artist);
+        var firstAlbum = artist.albums.at(0);
+        console.log('  first album', firstAlbum);
+        var firstTrack = firstAlbum.tracks.at(0);
+        console.log('  first track', firstTrack);
+        firstTrack.play();
+      },
+      generateListPage: function(e, detail) {
+        //console.log('requested:', detail.start, detail.end);
+        var dom = document.createDocumentFragment();
+        for (var i = detail.start, l=detail.end, d, r;
+             (i<l) && (d=this.artists.at(i)); i++) {
+
+          r = this.$.listItem.cloneNode(true);
+          var item = r;
+          r.style.display = null;
+          var divider = r.querySelector('.divider');
+          divider.style.display = d.divider ? null : 'none';
+          divider.textContent = d.divider;
+
+          var artist = d;
+          var artistNode = r.querySelector('.artist');
+          // Because of the shadow DOM/etc. if we try and use the built-in
+          // event-binding stuff, say via an on-click on the
+          // polymer-virtual-list, the event we get out of that will have a
+          // target of the polymer-virtual-list itself because it's opaque to
+          // us.  Since I don't currently want to modify that widget, this is
+          // basically our simplest option.
+          artistNode.addEventListener(
+            'click', this.artistClicked.bind(this, artist), false);
+          var nameNode = artistNode.querySelector('.artist-name');
+          nameNode.textContent = artist.get('name');
+
+          var albumsVisNode = artistNode.querySelector('.albums-vis');
+          albumsVisNode.albums = artist.albums;
+
+          var tracksVisNode = artistNode.querySelector('.tracks-vis');
+          tracksVisNode.artist = artist;
+
+          dom.appendChild(r);
+        }
+        detail.page.appendChild(dom);
+      },
+      refresh: function() {
+        this.count = this.artists.length;
+      }
+    });
+  </script>
+</polymer-element>
